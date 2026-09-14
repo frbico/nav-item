@@ -73,7 +73,8 @@ jobs:
           docker buildx imagetools inspect "$IMAGE" --raw > manifest.json
           for arch in amd64 arm64; do
             jq -e --arg arch "$arch" 'any(.manifests[]; .platform.os == "linux" and .platform.architecture == $arch)' manifest.json
-            docker run -d --platform "linux/$arch" --name nav-smoke -p 3000:3000 "$IMAGE"
+            digest=$(jq -r --arg arch "$arch" '.manifests[] | select(.platform.os == "linux" and .platform.architecture == $arch) | .digest' manifest.json)
+            docker run -d --platform "linux/$arch" --name nav-smoke -p 127.0.0.1:3000:3000 "${IMAGE%@*}@$digest"
             ready=false
             for attempt in $(seq 1 60); do
               if curl -fsS http://localhost:3000/ >/dev/null && curl -fsS http://localhost:3000/api/menus >/dev/null; then

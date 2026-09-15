@@ -21,7 +21,7 @@ RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/* \
     && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
     && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 COPY --from=backend-builder /app/node_modules ./node_modules
-COPY package.json app.js config.js db.js ./
+COPY package.json app.js config.js db.js sqlite.js ./
 COPY routes/ ./routes/
 COPY --chown=node:node uploads/ ./uploads/
 COPY --from=frontend-builder /app/dist ./web/dist

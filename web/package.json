@@ -1,10 +1,10 @@
 {
   "name": "nav-item-frontend",
-  "version": "1.0.0",
-  "author": "eooce",
+  "version": "1.1.0",
+  "author": "frbico",
   "description": "nav-item-frontend",
-  "repository": "https://github.com/eooce/nav-item",
-  "license": "MIT",
+  "repository": "https://github.com/frbico/nav-item",
+  "license": "Apache-2.0",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build"

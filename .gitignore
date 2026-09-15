@@ -7,3 +7,5 @@ database/
 *.log
 uploads/*
 !uploads/default-favicon.png
+
+release/

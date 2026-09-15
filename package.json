@@ -1,10 +1,10 @@
 {
   "name": "nav-item-backend",
-  "version": "1.0.0",
-  "author": "eooce",
+  "version": "1.1.0",
+  "author": "frbico",
   "description": "nav-item-backend",
-  "repository": "https://github.com/eooce/nav-item",
-  "license": "MIT",
+  "repository": "https://github.com/frbico/nav-item",
+  "license": "Apache-2.0",
   "main": "app.js",
   "scripts": {
     "dev": "node app.js",
@@ -18,12 +18,15 @@
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.3.0",
-    "sqlite3": "^6.0.1",
     "sharp": "^0.35.4",
     "helmet": "^8.1.0",
-    "express-rate-limit": "^8.2.1"
+    "express-rate-limit": "^8.2.1",
+    "@img/sharp-wasm32": "0.35.4"
   },
   "engines": {
-    "node": ">=22.12"
+    "node": ">=22.13"
+  },
+  "optionalDependencies": {
+    "sqlite3": "^6.0.1"
   }
 }

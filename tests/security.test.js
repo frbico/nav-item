@@ -19,12 +19,12 @@ test('unsafe startup settings are rejected', () => {
 
 test('security and data integrity regressions', async t => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'nav-regression-'));
-  for (const p of ['app.js','config.js','db.js','routes','web']) fs.cpSync(path.join(root,p),path.join(tmp,p),{recursive:true});
+  for (const p of ['app.js','config.js','db.js','sqlite.js','routes','web']) fs.cpSync(path.join(root,p),path.join(tmp,p),{recursive:true});
   fs.mkdirSync(path.join(tmp,'uploads'));
   fs.symlinkSync(path.join(root,'node_modules'),path.join(tmp,'node_modules'),'dir');
   // Exercise migration from the old users schema without changing its password.
   fs.mkdirSync(path.join(tmp,'database'));
-  const sqlite = require('sqlite3');
+  const sqlite = require('../sqlite');
   await new Promise((resolve,reject)=>{
     const db=new sqlite.Database(path.join(tmp,'database/nav.db'));
     db.serialize(()=>{

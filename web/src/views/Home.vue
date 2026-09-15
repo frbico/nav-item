@@ -41,13 +41,13 @@
     
     <!-- 左侧广告条 -->
     <div v-if="leftAds.length" class="ad-space-fixed left-ad-fixed">
-      <a v-for="ad in leftAds" :key="ad.id" :href="ad.url" target="_blank">
+      <a v-for="ad in leftAds" :key="ad.id" :href="safeHref(ad.url)" target="_blank">
         <img :src="ad.img" alt="广告" />
       </a>
     </div>
     <!-- 右侧广告条 -->
     <div v-if="rightAds.length" class="ad-space-fixed right-ad-fixed">
-      <a v-for="ad in rightAds" :key="ad.id" :href="ad.url" target="_blank">
+      <a v-for="ad in rightAds" :key="ad.id" :href="safeHref(ad.url)" target="_blank">
         <img :src="ad.img" alt="广告" />
       </a>
     </div>
@@ -83,16 +83,16 @@
             <a 
               v-for="friend in friendLinks" 
               :key="friend.id" 
-              :href="friend.url" 
+              :href="safeHref(friend.url)"
               target="_blank" 
               class="friend-link-card"
             >
               <div class="friend-link-logo">
                 <img 
-                  v-if="friend.logo" 
+                  v-if="friend.logo && !friend.logoFailed"
                   :src="friend.logo" 
                   :alt="friend.title"
-                  @error="handleLogoError"
+                  @error="friend.logoFailed = true"
                 />
                 <div v-else class="friend-link-placeholder">
                   {{ friend.title.charAt(0) }}
@@ -110,6 +110,7 @@
 </template>
 
 <script setup>
+import { safeHref } from "../safeUrl.mjs";
 import { ref, onMounted, computed } from 'vue';
 import { getMenus, getCards, getAds, getFriends } from '../api';
 import MenuBar from '../components/MenuBar.vue';
@@ -217,13 +218,15 @@ async function handleSearch() {
     // 站内搜索：遍历所有菜单，查找所有卡片
     let found = false;
     for (const menu of menus.value) {
-      const res = await getCards(menu.id);
+      const groups = await Promise.all([getCards(menu.id), ...(menu.subMenus || []).map(sub => getCards(menu.id, sub.id))]);
+      const res = { data: groups.flatMap(group => group.data) };
       const match = res.data.find(card =>
         card.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
         card.url.toLowerCase().includes(searchQuery.value.toLowerCase())
       );
       if (match) {
         activeMenu.value = menu;
+        activeSubMenu.value = null;
         cards.value = res.data;
         setTimeout(() => {
           const el = document.querySelector(`[data-card-id='${match.id}']`);
@@ -242,10 +245,7 @@ async function handleSearch() {
   }
 }
 
-function handleLogoError(event) {
-  event.target.style.display = 'none';
-  event.target.nextElementSibling.style.display = 'flex';
-}
+
 </script>
 
 <style scoped>
@@ -341,7 +341,7 @@ function handleLogoError(event) {
 
 .home-container {
   min-height: 95vh;
-  background-image: url('https://main.ssss.nyc.mn/background.webp');
+  background-image: url('/background.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

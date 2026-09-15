@@ -4,14 +4,12 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
 
-const JWT_SECRET = 'your_jwt_secret_key';
+const JWT_SECRET = require('../config').server.jwtSecret;
+const auth = require('./authMiddleware');
+const { rateLimit } = require('express-rate-limit');
+const loginLimit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
 
-function getClientIp(req) {
-  let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || '';
-  if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
-  if (typeof ip === 'string' && ip.startsWith('::ffff:')) ip = ip.replace('::ffff:', '');
-  return ip;
-}
+function getClientIp(req) { return req.ip; }
 
 function getShanghaiTime() {
   const date = new Date();
@@ -29,8 +27,9 @@ function getShanghaiTime() {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
-router.post('/login', (req, res) => {
+router.post('/login', loginLimit, (req, res) => {
   const { username, password } = req.body;
+  if (typeof username !== 'string' || username.length > 100 || typeof password !== 'string' || Buffer.byteLength(password) > 72) return res.status(400).json({ error: '参数无效' });
   db.get('SELECT * FROM users WHERE username=?', [username], (err, user) => {
     if (err || !user) return res.status(401).json({ error: '用户名或密码错误' });
     bcrypt.compare(password, user.password, (err, result) => {
@@ -42,7 +41,7 @@ router.post('/login', (req, res) => {
         const now = getShanghaiTime();
         const ip = getClientIp(req);
         db.run('UPDATE users SET last_login_time=?, last_login_ip=? WHERE id=?', [now, ip, user.id]);
-        const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '2h' });
+        const token = jwt.sign({ id: user.id, username: user.username, version: user.token_version }, JWT_SECRET, { expiresIn: '2h', algorithm: 'HS256', issuer: 'nav-item', audience: 'nav-item-admin' });
         res.json({ token, lastLoginTime, lastLoginIp });
       } else {
         res.status(401).json({ error: '用户名或密码错误' });
@@ -51,4 +50,10 @@ router.post('/login', (req, res) => {
   });
 });
 
+router.post('/logout', auth, (req, res, next) => {
+  db.run('UPDATE users SET token_version=token_version+1 WHERE id=?', [req.user.id], err => {
+    if (err) return next(err);
+    res.sendStatus(204);
+  });
+});
 module.exports = router; 

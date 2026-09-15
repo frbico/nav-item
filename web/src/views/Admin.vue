@@ -136,6 +136,9 @@ async function fetchLastLoginInfo() {
       const data = await res.json();
       lastLoginTime.value = data.last_login_time || '';
       lastLoginIp.value = data.last_login_ip || '';
+    } else if (res.status === 401) {
+      localStorage.removeItem('token');
+      isLoggedIn.value = false;
     }
   } catch (error) {
     console.error('获取用户信息失败:', error);
@@ -158,6 +161,9 @@ async function handleLogin() {
       isLoggedIn.value = true;
       lastLoginTime.value = response.data.lastLoginTime || '';
       lastLoginIp.value = response.data.lastLoginIp || '';
+    } else if (res.status === 401) {
+      localStorage.removeItem('token');
+      isLoggedIn.value = false;
     }
   } catch (error) {
     loginError.value = error.response?.data?.message || '登录失败，请检查用户名和密码';
@@ -166,7 +172,11 @@ async function handleLogin() {
   }
 }
 
-function logout() {
+async function logout() {
+  try {
+    const response = await fetch('/api/logout', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+    if (!response.ok && response.status !== 401) throw new Error('退出失败');
+  } catch { loginError.value = '退出失败，请重试'; return; }
   localStorage.removeItem('token');
   isLoggedIn.value = false;
   username.value = '';

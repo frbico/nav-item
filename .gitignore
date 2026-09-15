@@ -1,0 +1,9 @@
+node_modules/
+web/dist/
+database/
+.env
+.env.*
+!.env.example
+*.log
+uploads/*
+!uploads/default-favicon.png

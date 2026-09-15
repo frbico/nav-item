@@ -46,7 +46,7 @@ const userInfo = ref({});
 onMounted(async () => {
   try {
     const response = await getUserProfile();
-    userInfo.value = response.data;
+    userInfo.value = response.data.data;
   } catch (error) {
     console.error('获取用户信息失败:', error);
   }
@@ -63,8 +63,8 @@ async function handleChangePassword() {
     return;
   }
   
-  if (newPassword.value.length < 6) {
-    showMessage('新密码长度至少6位', 'error');
+  if (newPassword.value.length < 12) {
+    showMessage('新密码长度至少12位', 'error');
     return;
   }
   

@@ -1,9 +1,9 @@
 <template>
   <div class="container card-grid" :class="animationClass">
-    <div v-for="(card, index) in cards" :key="card.id" 
+    <div v-for="(card, index) in cards" :key="card.id" :data-card-id="card.id"
          class="link-item" 
          :style="getCardStyle(index)">
-      <a :href="card.url" target="_blank" :title="getTooltip(card)">
+      <a :href="safeHref(card.url)" target="_blank" :title="getTooltip(card)">
         <img class="link-icon" :src="getLogo(card)" alt="" @error="onImgError($event, card)" loading="lazy">
         <span class="link-text">{{ truncate(card.title) }}</span>
       </a>
@@ -12,6 +12,7 @@
 </template>
 
 <script setup>
+import { safeHref } from "../safeUrl.mjs";
 import { ref, watch, nextTick } from 'vue';
 
 const props = defineProps({ cards: Array });
@@ -120,7 +121,7 @@ function getCardStyle(index) {
 }
 
 function getLogo(card) {
-  if (card.custom_logo_path) return 'http://localhost:3000/uploads/' + card.custom_logo_path;
+  if (card.custom_logo_path) return '/uploads/' + card.custom_logo_path;
   if (card.logo_url) return card.logo_url;
   // 默认 favicon
   try {

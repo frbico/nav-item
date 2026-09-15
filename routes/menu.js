@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const auth = require('./authMiddleware');
 const router = express.Router();
+router.use(require('./validation')('menu'));
 
 // 获取所有菜单（包含子菜单）
 router.get('/', (req, res) => {

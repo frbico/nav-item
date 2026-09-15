@@ -1,7 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const config = require('./config');
 
 const dbDir = path.join(__dirname, 'database');
@@ -12,6 +12,7 @@ if (!fs.existsSync(dbDir)) {
 const db = new sqlite3.Database(path.join(dbDir, 'nav.db'));
 
 db.serialize(() => {
+  db.run("PRAGMA foreign_keys = ON");
   db.run(`CREATE TABLE IF NOT EXISTS menus (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -51,6 +52,7 @@ db.serialize(() => {
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL
   )`);
+  db.run(`ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0`, [], () => {});
   db.run(`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`);
   db.run(`CREATE TABLE IF NOT EXISTS ads (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

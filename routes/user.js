@@ -1,9 +1,10 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const db = require('../db');
 const authMiddleware = require('./authMiddleware');
 
 const router = express.Router();
+router.use(require('./validation')('user'));
 
 // 获取当前用户信息
 router.get('/profile', authMiddleware, (req, res) => {
@@ -35,40 +36,19 @@ router.get('/me', authMiddleware, (req, res) => {
 });
 
 // 修改密码
-router.put('/password', authMiddleware, (req, res) => {
+router.put('/password', authMiddleware, async (req, res, next) => {
   const { oldPassword, newPassword } = req.body;
-  
-  if (!oldPassword || !newPassword) {
-    return res.status(400).json({ message: '请提供旧密码和新密码' });
+  if (typeof oldPassword !== 'string' || typeof newPassword !== 'string' ||
+      !oldPassword || newPassword.length < 12 || Buffer.byteLength(newPassword) > 72 || Buffer.byteLength(oldPassword) > 72) {
+    return res.status(400).json({ message: '密码至少12位，最多72字节，且必须为字符串' });
   }
-  
-  if (newPassword.length < 6) {
-    return res.status(400).json({ message: '新密码长度至少6位' });
-  }
-  
-  // 验证旧密码
-  db.get('SELECT password FROM users WHERE id = ?', [req.user.id], (err, user) => {
-    if (err) {
-      return res.status(500).json({ message: '服务器错误' });
-    }
-    if (!user) {
-      return res.status(404).json({ message: '用户不存在' });
-    }
-    
-    const isValidPassword = bcrypt.compareSync(oldPassword, user.password);
-    if (!isValidPassword) {
-      return res.status(400).json({ message: '旧密码错误' });
-    }
-    
-    // 更新密码
-    const newPasswordHash = bcrypt.hashSync(newPassword, 10);
-    db.run('UPDATE users SET password = ? WHERE id = ?', [newPasswordHash, req.user.id], (err) => {
-      if (err) {
-        return res.status(500).json({ message: '密码更新失败' });
-      }
-      res.json({ message: '密码修改成功' });
-    });
-  });
+  try {
+    const user = await new Promise((resolve, reject) => db.get('SELECT password FROM users WHERE id=?', [req.user.id], (err, row) => err ? reject(err) : resolve(row)));
+    if (!user || !await bcrypt.compare(oldPassword, user.password)) return res.status(400).json({ message: '旧密码错误' });
+    const hash = await bcrypt.hash(newPassword, 12);
+    await new Promise((resolve, reject) => db.run('UPDATE users SET password=?, token_version=token_version+1 WHERE id=?', [hash, req.user.id], err => err ? reject(err) : resolve()));
+    res.json({ message: '密码修改成功' });
+  } catch (err) { next(err); }
 });
 
 // 获取所有用户（管理员功能）

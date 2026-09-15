@@ -2,6 +2,15 @@ const express = require('express');
 const db = require('../db');
 const auth = require('./authMiddleware');
 const router = express.Router();
+router.use(require('./validation')('card'));
+router.use((req, res, next) => {
+  if (!['POST','PUT'].includes(req.method) || !req.body.sub_menu_id) return next();
+  db.get('SELECT parent_id FROM sub_menus WHERE id=?', [req.body.sub_menu_id], (err, row) => {
+    if (err) return next(err);
+    if (!row || (req.body.menu_id && row.parent_id !== req.body.menu_id)) return res.status(400).json({ error: '子菜单与主菜单不匹配' });
+    next();
+  });
+});
 
 // 获取指定菜单的卡片
 router.get('/:menuId', (req, res) => {

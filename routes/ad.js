@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const auth = require('./authMiddleware');
 const router = express.Router();
+router.use(require('./validation')('ad'));
 
 // 获取广告
 router.get('/', (req, res) => {

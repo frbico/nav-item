@@ -161,9 +161,8 @@ async function handleLogin() {
       isLoggedIn.value = true;
       lastLoginTime.value = response.data.lastLoginTime || '';
       lastLoginIp.value = response.data.lastLoginIp || '';
-    } else if (res.status === 401) {
-      localStorage.removeItem('token');
-      isLoggedIn.value = false;
+    } else {
+      throw new Error('登录响应缺少会话令牌');
     }
   } catch (error) {
     loginError.value = error.response?.data?.message || '登录失败，请检查用户名和密码';
